@@ -42,7 +42,7 @@
 
 # The folder where the current theme will be copied. Can be anywhere, including iCloud.
 # This is where all vaults will be syncronised FROM.
-MASTER_FOLDER="/Users/username/Library/Mobile Documents/com~apple~CloudDocs/Files/settings/"
+MASTER_FOLDER="/Users/username/Library/Mobile Documents/com~apple~CloudDocs/Files/settings"
 
 # The folder containing Obsidian vaults.
 OBSIDIAN_FOLDER="/Users/username/Library/Mobile Documents/iCloud~md~obsidian/Documents"
@@ -65,8 +65,23 @@ declare -a SETTINGS=("appearance" "hotkeys")
 GREEN='\033[;32m'
 RESET='\033[0m'
 
-# Find the most recently modified theme.css or hotkeys.json file in the Obsidian folder
-LAST_MODIFIED_FILE=$(find $OBSIDIAN_FOLDER -type f \( -name theme.css -o -name hotkeys.json \) -print0 | xargs -0 stat -f "%m %N" | sort -rn | head -1 | cut -f2- -d" ")
+# Find the most recently modified theme.css or hotkeys.json file in the MASTER folder
+LAST_MODIFIED=$(find $OBSIDIAN_FOLDER -type f \( -name theme.css -o -name hotkeys.json \) -print0 | xargs -0 stat -f "%m %N" | sort -rn | head -1)
+
+# Extract the time column and the filename column, with delimiter=space
+LAST_MODIFIED_TIME=$(echo $LAST_MODIFIED | cut -f1 -d" ")
+LAST_MODIFIED_FILE=$(echo $LAST_MODIFIED | cut -f2- -d" ")
+
+# Find the most recently modified theme.css or hotkeys.json file in the MASTER folder
+# and extract its time column
+LAST_MODIFIED_MASTER_TIME=$(find $MASTER_FOLDER -type f \( -name theme.css -o -name hotkeys.json \) -print0 | xargs -0 stat -f "%m %N" | sort -rn | head -1 | cut -f1 -d" ")
+
+# If the most recent vault's last modified time is less then or equal to the master's one
+# we don't need to sync.
+if [[ $(($LAST_MODIFIED_TIME)) -le $(($LAST_MODIFIED_MASTER_TIME)) ]] ; then
+  echo "No vault has been modified since last sync. Aborting."
+  exit
+fi
 
 # Extract the vault name from the file path
 # /.*$ matches everything after first slash
@@ -90,6 +105,8 @@ if ! [ "$CONT" = "y" ]; then
   exit
 
 else
+
+  echo $MASTER_FOLDER/$THEME_NAME/
 
   # Copy theme.css to the master folder
   if cp $LAST_MODIFIED_FILE "$MASTER_FOLDER/$THEME_NAME/" ; then
