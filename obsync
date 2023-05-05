@@ -46,7 +46,7 @@ MASTER_FOLDER="/Users/username/Library/Mobile Documents/com~apple~CloudDocs/File
 OBSIDIAN_FOLDER="/Users/username/Library/Mobile Documents/iCloud~md~obsidian/Documents"
 
 # The theme name to be synchronized.
-THEME_NAME="My Awesome Theme"
+THEME_NAME="My Amazing Theme"
 
 # Obsidian app .json files to be synchronised.
 # Default is "appearance" and "hotkeys" only.
