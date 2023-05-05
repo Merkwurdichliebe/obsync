@@ -1,0 +1,109 @@
+#!zsh
+
+# ----------------------------------- #
+# QUICK AND DIRTY OBSIDIAN THEME SYNC #
+# ----------------------------------- #
+
+# THIS SCRIPT COMES WITHOUT WARRANTY OF ANY KIND.
+# USE IT AT YOUR OWN RISK.
+# I ASSUME NO LIABILITY FOR THE USEFULNESS
+# NOR FOR ANY SORT OF DAMAGES USING THIS SCRIPT MAY CAUSE. 
+
+#
+# This script copies an edited Obsidian theme.css file
+# as well as relevant appearance and hotkey settings
+# from a .obsidian "vault" folder to a "master" folder.
+#
+# It then copies these files to all Obsidian vaults.
+#
+# Tested on macOS Monterey and Obsidian 1.2.7
+#
+
+#
+# IMPORTANT
+#
+# Save the script in your PATH and run it
+# FROM THE MOST RECENTLY EDITED .obsidian folder
+# (located inside your vault).
+#
+
+# ----------------------------------------------------- #
+# Adapt the following variables to your specific system #
+# ----------------------------------------------------- #
+
+
+# The folder where the current theme will be copied. Can be anywhere, including iCloud.
+# This is where all vaults will be syncronised FROM.
+MASTER_FOLDER="/Users/user-name/Library/Mobile Documents/com~apple~CloudDocs/Files/settings/"
+
+# The folder containing Obsidian vaults.
+OBSIDIAN_FOLDER="/Users/user-name/Library/Mobile Documents/iCloud~md~obsidian/Documents"
+
+# The theme name to be synchronized.
+THEME_NAME="My Amazing Theme"
+
+# Obsidian app .json files to be synchronised.
+# Default is "appearance" and "hotkeys" only.
+# We don't need to sync all .json files
+# (especially not "bookmarks" which is very vault-specific).
+declare -a SETTINGS=("appearance" "hotkeys")
+
+
+# ----------------------------------------------------- #
+# Main script                                           #
+# ----------------------------------------------------- #
+
+
+echo Will sync "theme.css" and relevant settings from current .obsidian folder.
+
+# Using zsh version of "read" for macOS
+# Replace with the following if using bash:
+# read -p "[y] to continue:" CONT
+read "CONT?[y] to continue:"
+
+if [ "$CONT" = "y" ]; then
+
+  # Copy theme.css to the master folder
+  if cp "$PWD/themes/$THEME_NAME/theme.css" "$MASTER_FOLDER/$THEME_NAME/" ; then
+    echo "theme.css -> iCloud"
+  else
+    echo "*** Theme copy error. Is '$THEME_NAME' in the 'themes' folder?"
+    exit
+  fi
+
+  # Copy .json settings to master folder
+  for SETTING in $SETTINGS; do
+    if ! cp "$PWD/$SETTING.json" "$MASTER_FOLDER/$THEME_NAME/" ; then
+      echo "*** .json settings copy error ($SETTING)."
+      exit
+    else
+      echo "$SETTING.json -> iCloud"
+    fi
+  done
+
+  echo "-- Master copy OK"
+
+  # Iterate over all directories (Obsidian "vaults")
+  # Must not put */ inside the path variable
+  # cf. https://stackoverflow.com/questions/71180063/using-a-directory-path-variable-in-a-for-loop
+  for FILE in "$OBSIDIAN_FOLDER"/*/; do
+
+    echo "Vault: $FILE"
+
+    # Copy theme.css from the master folder to each vault
+    cp "$MASTER_FOLDER/$THEME_NAME/theme.css" "$FILE.obsidian/themes/$THEME_NAME/"
+    echo "  iCloud theme.css -> vault"
+
+    for SETTING in $SETTINGS; do
+      cp "$MASTER_FOLDER/$THEME_NAME/$SETTING.json" "$FILE.obsidian/"
+      echo "  iCloud $SETTING.json -> vault"
+    done
+  done
+
+  echo "-- Obsidian vaults copy OK"
+
+else
+  echo "Aborting.";
+fi
+
+echo "Done."
