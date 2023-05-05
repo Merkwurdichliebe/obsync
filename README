@@ -1,0 +1,27 @@
+----------------------------------------------------------
+QUICK AND DIRTY OBSIDIAN THEME SYNC
+----------------------------------------------------------
+
+THIS SCRIPT COMES WITHOUT WARRANTY OF ANY KIND.
+USE IT AT YOUR OWN RISK.
+I ASSUME NO LIABILITY FOR THE USEFULNESS
+NOR FOR ANY SORT OF DAMAGES USING THIS SCRIPT MAY CAUSE. 
+
+
+This script copies an edited Obsidian theme.css file
+as well as relevant appearance and hotkey settings
+from a .obsidian "vault" folder to a "master" folder.
+
+It then copies these files to all Obsidian vaults.
+
+Tested on macOS Monterey and Obsidian 1.2.7
+
+----------------------------------------------------------
+
+IMPORTANT
+
+Save the script in your PATH and run it
+FROM THE MOST RECENTLY EDITED .obsidian folder
+(located inside your vault).
+
+----------------------------------------------------------
