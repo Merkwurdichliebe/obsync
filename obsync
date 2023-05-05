@@ -13,8 +13,10 @@
 # This script copies an edited Obsidian theme.css file
 # as well as relevant appearance and hotkey settings
 # from a .obsidian "vault" folder to a "master" folder.
-#
 # It then copies these files to all Obsidian vaults.
+#
+# The vault identified as the "master" vault
+# is the one with the last modified theme.css or hotkeys.json
 #
 # Tested on macOS Monterey and Obsidian 1.2.7
 #
@@ -25,11 +27,11 @@
 # Script is using zsh version of "read" for macOS in order to read user input.
 # If using bash, replace the following line:
 #
-# read "CONT?Latest vault is '$LATEST_VAULT_NAME' -- [y] to sync all vaults:"
+# read "CONT?[y] to sync all vaults:"
 #
 # with:
 # 
-# read -p "Latest vault is '$LATEST_VAULT_NAME' -- [y] to sync all vaults:" CONT
+# read -p "[y] to sync all vaults:" CONT
 #
 
 
@@ -40,18 +42,18 @@
 
 # The folder where the current theme will be copied. Can be anywhere, including iCloud.
 # This is where all vaults will be syncronised FROM.
-MASTER_FOLDER="/Users/username/Library/Mobile Documents/com~apple~CloudDocs/Files/settings/"
+MASTER_FOLDER="/Users/tz/Library/Mobile Documents/com~apple~CloudDocs/Files/settings/"
 
 # The folder containing Obsidian vaults.
-OBSIDIAN_FOLDER="/Users/username/Library/Mobile Documents/iCloud~md~obsidian/Documents"
+OBSIDIAN_FOLDER="/Users/tz/Library/Mobile Documents/iCloud~md~obsidian/Documents"
 
 # The theme name to be synchronized.
-THEME_NAME="My Amazing Theme"
+THEME_NAME="Tal Markdown"
 
 # Obsidian app .json files to be synchronised.
 # Default is "appearance" and "hotkeys" only.
 # We don't need to sync all .json files
-# (especially not "bookmarks" which is very vault-specific).
+# (especially not "bookmarks" which is vault-specific).
 declare -a SETTINGS=("appearance" "hotkeys")
 
 
@@ -59,24 +61,28 @@ declare -a SETTINGS=("appearance" "hotkeys")
 # Main script                                           #
 # ----------------------------------------------------- #
 
+# Colors
+GREEN='\033[;32m'
+RESET='\033[0m'
 
-# Find the most recently modified theme.css file in the Obsidian folder
-LATEST_CSS=$(find $OBSIDIAN_FOLDER -type f -name theme.css -print0 | xargs -0 stat -f "%m %N" | sort -rn | head -1 | cut -f2- -d" ")
+# Find the most recently modified theme.css or hotkeys.json file in the Obsidian folder
+LAST_MODIFIED_FILE=$(find $OBSIDIAN_FOLDER -type f \( -name theme.css -o -name hotkeys.json \) -print0 | xargs -0 stat -f "%m %N" | sort -rn | head -1 | cut -f2- -d" ")
 
-# Get the vault name
-if ! [[ "$LATEST_CSS" == *"$THEME_NAME"* ]] ; then
-  echo "Last modified 'theme.css' file is not inside theme '$THEME_NAME'.\nCheck script settings. Aborting."
-  exit
-else
-  # Extract the vault name from the theme.css full path
-  LATEST_VAULT_NAME=$(echo $LATEST_CSS | sed -e "s+^$OBSIDIAN_FOLDER/++" -e "s+/.obsidian/themes/$THEME_NAME/theme.css$++")
-fi
+# Extract the vault name from the file path
+# /.*$ matches everything after first slash
+VAULT_NAME=$(echo $LAST_MODIFIED_FILE | sed -e "s+^$OBSIDIAN_FOLDER/++" -e "s+/.*$++")
 
+
+# Get user confirmation
 echo "--------------------------------"
 echo "Obsidian theme and settings sync"
 echo "--------------------------------"
-read "CONT?Latest vault is '$LATEST_VAULT_NAME' -- [y] to sync all vaults:"
+echo "Last modified file is:"
+echo "  $LAST_MODIFIED_FILE"
+echo "Latest vault is $GREEN$VAULT_NAME$RESET"
+read "CONT?[y] to sync all vaults:"
 
+# Sync all the necessary files
 if ! [ "$CONT" = "y" ]; then
 
   # Abort if not "y"
@@ -86,7 +92,7 @@ if ! [ "$CONT" = "y" ]; then
 else
 
   # Copy theme.css to the master folder
-  if cp $LATEST_CSS "$MASTER_FOLDER/$THEME_NAME/" ; then
+  if cp $LAST_MODIFIED_FILE "$MASTER_FOLDER/$THEME_NAME/" ; then
     echo "\ntheme.css -> master"
   else
     echo "\n*** Theme copy error. Is '$THEME_NAME' in the 'themes' folder?"
@@ -95,7 +101,7 @@ else
 
   # Copy .json settings to master folder
   for SETTING in $SETTINGS; do
-    if ! cp "$OBSIDIAN_FOLDER/$LATEST_VAULT_NAME/.obsidian/$SETTING.json" "$MASTER_FOLDER/$THEME_NAME/" ; then
+    if ! cp "$OBSIDIAN_FOLDER/$VAULT_NAME/.obsidian/$SETTING.json" "$MASTER_FOLDER/$THEME_NAME/" ; then
       echo "*** .json settings copy error ($SETTING)."
       exit
     else
@@ -103,7 +109,7 @@ else
     fi
   done
 
-  echo "-- Master copy OK\n"
+  echo "$GREEN-- Master copy OK\n$RESET"
 
   # Iterate over all directories (Obsidian "vaults")
   for FILE in "$OBSIDIAN_FOLDER"/*/; do
@@ -121,7 +127,7 @@ else
     done
   done
 
-  echo "-- Obsidian vaults copy OK\n"
+  echo "$GREEN-- Obsidian vaults copy OK\n$RESET"
 
 fi
 
