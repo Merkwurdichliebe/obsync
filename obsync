@@ -42,13 +42,13 @@
 
 # The folder where the current theme will be copied. Can be anywhere, including iCloud.
 # This is where all vaults will be syncronised FROM.
-MASTER_FOLDER="/Users/tz/Library/Mobile Documents/com~apple~CloudDocs/Files/settings/"
+MASTER_FOLDER="/Users/username/Library/Mobile Documents/com~apple~CloudDocs/Files/settings/"
 
 # The folder containing Obsidian vaults.
-OBSIDIAN_FOLDER="/Users/tz/Library/Mobile Documents/iCloud~md~obsidian/Documents"
+OBSIDIAN_FOLDER="/Users/username/Library/Mobile Documents/iCloud~md~obsidian/Documents"
 
 # The theme name to be synchronized.
-THEME_NAME="Tal Markdown"
+THEME_NAME="My Amazing Theme"
 
 # Obsidian app .json files to be synchronised.
 # Default is "appearance" and "hotkeys" only.
