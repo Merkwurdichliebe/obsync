@@ -22,10 +22,16 @@
 #
 # IMPORTANT
 #
-# Save the script in your PATH and run it
-# FROM THE MOST RECENTLY EDITED .obsidian folder
-# (located inside your vault).
+# Script is using zsh version of "read" for macOS in order to read user input.
+# If using bash, replace the following line:
 #
+# read "CONT?Latest vault is '$LATEST_VAULT_NAME' -- [y] to sync all vaults:"
+#
+# with:
+# 
+# read -p "Latest vault is '$LATEST_VAULT_NAME' -- [y] to sync all vaults:" CONT
+#
+
 
 # ----------------------------------------------------- #
 # Adapt the following variables to your specific system #
@@ -34,13 +40,13 @@
 
 # The folder where the current theme will be copied. Can be anywhere, including iCloud.
 # This is where all vaults will be syncronised FROM.
-MASTER_FOLDER="/Users/user-name/Library/Mobile Documents/com~apple~CloudDocs/Files/settings/"
+MASTER_FOLDER="/Users/tz/Library/Mobile Documents/com~apple~CloudDocs/Files/settings/"
 
 # The folder containing Obsidian vaults.
-OBSIDIAN_FOLDER="/Users/user-name/Library/Mobile Documents/iCloud~md~obsidian/Documents"
+OBSIDIAN_FOLDER="/Users/tz/Library/Mobile Documents/iCloud~md~obsidian/Documents"
 
 # The theme name to be synchronized.
-THEME_NAME="My Amazing Theme"
+THEME_NAME="Tal Markdown"
 
 # Obsidian app .json files to be synchronised.
 # Default is "appearance" and "hotkeys" only.
@@ -54,56 +60,69 @@ declare -a SETTINGS=("appearance" "hotkeys")
 # ----------------------------------------------------- #
 
 
-echo Will sync "theme.css" and relevant settings from current .obsidian folder.
+# Find the most recently modified theme.css file in the Obsidian folder
+LATEST_CSS=$(find $OBSIDIAN_FOLDER -type f -name theme.css -print0 | xargs -0 stat -f "%m %N" | sort -rn | head -1 | cut -f2- -d" ")
 
-# Using zsh version of "read" for macOS
-# Replace with the following if using bash:
-# read -p "[y] to continue:" CONT
-read "CONT?[y] to continue:"
+# Get the vault name
+if ! [[ "$LATEST_CSS" == *"$THEME_NAME"* ]] ; then
+  echo "Last modified 'theme.css' file is not inside theme '$THEME_NAME'.\nCheck script settings. Aborting."
+  exit
+else
+  # Extract the vault name from the theme.css full path
+  LATEST_VAULT_NAME=$(echo $LATEST_CSS | sed -e "s+^$OBSIDIAN_FOLDER/++" -e "s+/.obsidian/themes/$THEME_NAME/theme.css$++")
+fi
 
-if [ "$CONT" = "y" ]; then
+echo "--------------------------------"
+echo "Obsidian theme and settings sync"
+echo "--------------------------------"
+read "CONT?Latest vault is '$LATEST_VAULT_NAME' -- [y] to sync all vaults:"
+
+if ! [ "$CONT" = "y" ]; then
+
+  # Abort if not "y"
+  echo Aborting.
+  exit
+
+else
 
   # Copy theme.css to the master folder
-  if cp "$PWD/themes/$THEME_NAME/theme.css" "$MASTER_FOLDER/$THEME_NAME/" ; then
-    echo "theme.css -> iCloud"
+  if cp $LATEST_CSS "$MASTER_FOLDER/$THEME_NAME/" ; then
+    echo "\ntheme.css -> master"
   else
-    echo "*** Theme copy error. Is '$THEME_NAME' in the 'themes' folder?"
+    echo "\n*** Theme copy error. Is '$THEME_NAME' in the 'themes' folder?"
     exit
   fi
 
   # Copy .json settings to master folder
   for SETTING in $SETTINGS; do
-    if ! cp "$PWD/$SETTING.json" "$MASTER_FOLDER/$THEME_NAME/" ; then
+    if ! cp "$OBSIDIAN_FOLDER/$LATEST_VAULT_NAME/.obsidian/$SETTING.json" "$MASTER_FOLDER/$THEME_NAME/" ; then
       echo "*** .json settings copy error ($SETTING)."
       exit
     else
-      echo "$SETTING.json -> iCloud"
+      echo "$SETTING.json -> master"
     fi
   done
 
-  echo "-- Master copy OK"
+  echo "-- Master copy OK\n"
 
   # Iterate over all directories (Obsidian "vaults")
-  # Must not put */ inside the path variable
-  # cf. https://stackoverflow.com/questions/71180063/using-a-directory-path-variable-in-a-for-loop
   for FILE in "$OBSIDIAN_FOLDER"/*/; do
 
     echo "Vault: $FILE"
 
     # Copy theme.css from the master folder to each vault
     cp "$MASTER_FOLDER/$THEME_NAME/theme.css" "$FILE.obsidian/themes/$THEME_NAME/"
-    echo "  iCloud theme.css -> vault"
+    echo "  master theme.css -> vault"
 
+    # Copy .json settings from the master folder to each vault
     for SETTING in $SETTINGS; do
       cp "$MASTER_FOLDER/$THEME_NAME/$SETTING.json" "$FILE.obsidian/"
-      echo "  iCloud $SETTING.json -> vault"
+      echo "  master $SETTING.json -> vault"
     done
   done
 
-  echo "-- Obsidian vaults copy OK"
+  echo "-- Obsidian vaults copy OK\n"
 
-else
-  echo "Aborting.";
 fi
 
 echo "Done."
