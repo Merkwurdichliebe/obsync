@@ -65,14 +65,14 @@ declare -a SETTINGS=("appearance" "hotkeys")
 GREEN='\033[;32m'
 RESET='\033[0m'
 
-# Find the most recently modified theme.css or hotkeys.json file in the MASTER folder
+# Find the most recently modified theme.css or hotkeys.json file in the Obsidian folder
 LAST_MODIFIED=$(find $OBSIDIAN_FOLDER -type f \( -name theme.css -o -name hotkeys.json \) -print0 | xargs -0 stat -f "%m %N" | sort -rn | head -1)
 
 # Extract the time column and the filename column, with delimiter=space
 LAST_MODIFIED_TIME=$(echo $LAST_MODIFIED | cut -f1 -d" ")
 LAST_MODIFIED_FILE=$(echo $LAST_MODIFIED | cut -f2- -d" ")
 
-# Find the most recently modified theme.css or hotkeys.json file in the MASTER folder
+# Find the most recently modified theme.css or hotkeys.json file in the master folder
 # and extract its time column
 LAST_MODIFIED_MASTER_TIME=$(find $MASTER_FOLDER -type f \( -name theme.css -o -name hotkeys.json \) -print0 | xargs -0 stat -f "%m %N" | sort -rn | head -1 | cut -f1 -d" ")
 
